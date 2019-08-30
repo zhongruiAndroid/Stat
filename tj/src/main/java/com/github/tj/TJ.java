@@ -3,16 +3,50 @@ package com.github.tj;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 
 /***
  *   created by android on 2019/8/29
  */
 public class TJ {
+    public static void onResume(Activity activity) {
+        onResume(activity,null);
+    }
+    public static synchronized void onResume(Activity activity,String name) {
+        TJStatCore.get().onResume(activity,name);
+    }
+    public static  void onPause(Activity activity) {
+        onPause(activity,null);
+    }
+    public static synchronized void onPause(Activity activity,String name) {
+        TJStatCore.get().onPause(activity,name);
+    }
+
+    public static void onResume(Fragment fragment) {
+        onResume(fragment,null);
+    }
+    public static synchronized void onResume(Fragment fragment,String name) {
+        TJStatCore.get().onResume(fragment,name);
+    }
+    public static void onPause(Fragment fragment) {
+        onPause(fragment,null);
+    }
+    public static synchronized void onPause(Fragment fragment,String name) {
+        TJStatCore.get().onPause(fragment,name);
+    }
+    public static  void setLogId(String logId) {
+        TJStatCore.get().setLogId(logId);
+    }
+
+
+
+
     public static void init(Activity activity){
         if(activity==null){
-            throw new IllegalStateException("activity can not null");
+            throw new IllegalStateException("init() activity can not null");
         }
+        TJStatCore.get().changeLogId();
         Application application = activity.getApplication();
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
@@ -21,7 +55,6 @@ public class TJ {
             }
             @Override
             public void onActivityStarted(Activity activity) {
-
                 LG.e("onActivityStarted:"+activity.getClass().getSimpleName());
             }
             @Override
@@ -45,6 +78,7 @@ public class TJ {
                 LG.e("onActivityDestroyed:"+activity.getClass().getSimpleName());
             }
         });
-
     }
+
+
 }
