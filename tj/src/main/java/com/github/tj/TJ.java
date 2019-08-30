@@ -24,35 +24,25 @@ public class TJ {
 
                 LG.e("onActivityStarted:"+activity.getClass().getSimpleName());
             }
-
             @Override
             public void onActivityResumed(Activity activity) {
                 LG.e("onActivityResumed:"+activity.getClass().getSimpleName());
-
             }
-
             @Override
             public void onActivityPaused(Activity activity) {
                 LG.e("onActivityPaused:"+activity.getClass().getSimpleName());
-
             }
-
             @Override
             public void onActivityStopped(Activity activity) {
                 LG.e("onActivityStopped:"+activity.getClass().getSimpleName());
-
             }
-
             @Override
             public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
                 LG.e("onActivitySaveInstanceState:"+activity.getClass().getSimpleName());
-
             }
-
             @Override
             public void onActivityDestroyed(Activity activity) {
                 LG.e("onActivityDestroyed:"+activity.getClass().getSimpleName());
-
             }
         });
 
