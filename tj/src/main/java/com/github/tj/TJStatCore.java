@@ -6,9 +6,12 @@ import android.support.v4.app.Fragment;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /***
  *   created by android on 2019/8/29
@@ -18,8 +21,10 @@ public class TJStatCore {
     private PageHelper pageHelperAct;
     private PageHelper pageHelperFrag;
     private String logId;
+    private List pageList;
 
     private TJStatCore() {
+        pageList=new ArrayList();
         pageHelperAct=new PageHelper();
         pageHelperFrag=new PageHelper();
     }
@@ -87,6 +92,13 @@ public class TJStatCore {
             pageName=className;
         }
         long intoTime = Calendar.getInstance().getTimeInMillis();
+
+        //如果存在endtime说明需要把上个页面数据放到list里面去
+        if(pageHelperAct.endTime>0){
+            pageList.add(pageHelperAct);
+        }
+        //需要重新实例化保存新数据
+        pageHelperAct=new PageHelper();
         pageHelperAct.currentPage=className;
         pageHelperAct.nickName=pageName;
         pageHelperAct.startTime=intoTime;
