@@ -3,7 +3,7 @@ package com.github.tj;
 /***
  *   created by android on 2019/8/30
  */
-public class PageHelper {
+public class PageBean {
     public String currentPage;
     public String nickName;
     public String prePage;
