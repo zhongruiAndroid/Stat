@@ -38,7 +38,9 @@ public class TJ {
     public static  void setLogId(String logId) {
         TJStatCore.get().setLogId(logId);
     }
-
+    public static  void changeLogId() {
+        TJStatCore.get().changeLogId();
+    }
 
 
 
@@ -46,6 +48,7 @@ public class TJ {
         if(activity==null){
             throw new IllegalStateException("init() activity can not null");
         }
+        //每次启动app应用之后的页面信息上报，接口需要一个logid
         TJStatCore.get().changeLogId();
         Application application = activity.getApplication();
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
@@ -60,6 +63,11 @@ public class TJ {
             @Override
             public void onActivityResumed(Activity activity) {
                 LG.e("onActivityResumed:"+activity.getClass().getSimpleName());
+                Activity topAct = TJStatCore.get().getTopAct();
+                if(topAct!=null&&topAct==activity){
+                    //如果当前页面的activity进入stop状态，将页面标记改为最后退出状态，防止用户从任务管理器关闭app，如果没有关闭，则在resumed改回状态
+                    TJStatCore.get().removeExitFlag();
+                }
             }
             @Override
             public void onActivityPaused(Activity activity) {
@@ -67,6 +75,13 @@ public class TJ {
             }
             @Override
             public void onActivityStopped(Activity activity) {
+                Activity topAct = TJStatCore.get().getTopAct();
+                if(topAct!=null&&topAct==activity){
+                    //如果当前页面的activity进入stop状态，将页面标记改为最后退出状态，防止用户从任务管理器关闭app，如果没有关闭，则在resumed改回状态
+                    //并且将数据保存到数据中
+                    TJStatCore.get().saveDataToDataBase(activity);
+                    TJStatCore.get().setExitFlag();
+                }
                 LG.e("onActivityStopped:"+activity.getClass().getSimpleName());
             }
             @Override

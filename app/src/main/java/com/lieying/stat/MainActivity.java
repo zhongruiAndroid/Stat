@@ -25,4 +25,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             break;
         }
     }
+
+    @Override
+    protected void onResume() {
+        TJ.onResume(this);
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        TJ.onPause(this);
+        super.onPause();
+    }
 }
