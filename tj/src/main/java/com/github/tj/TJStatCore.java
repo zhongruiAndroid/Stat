@@ -18,8 +18,6 @@ import java.util.UUID;
  */
 public class TJStatCore {
     private String logId;
-    public int intervalTimeMillis = 2000 * 1000;
-    private boolean isInBackground;
     private final int cacheSize = 10;
     private static TJStatCore singleObj;
     private PageBean pageBeanBefore;//上一个页面
@@ -286,7 +284,5 @@ public class TJStatCore {
         SaveHelper.updateData(context, pageBeanAct);
     }
 
-    public void setAppIntoBackground() {
-        isInBackground = true;
-    }
+
 }

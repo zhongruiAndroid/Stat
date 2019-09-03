@@ -46,15 +46,9 @@ public class TJ {
 
 
 
-    public static void init(Activity activity){
-        init(activity,TJStatCore.get().intervalTimeMillis);
-    }
-    public static void init(Activity activity,int intervalTimeMillis){
+    public static void init(Activity activity ){
         if(activity==null){
             throw new IllegalStateException("init() activity can not null");
-        }
-        if(intervalTimeMillis>1000){
-            TJStatCore.get().intervalTimeMillis=intervalTimeMillis;
         }
         //每次启动app应用之后的页面信息上报，接口需要一个logid
         TJStatCore.get().changeLogId();
@@ -80,7 +74,6 @@ public class TJ {
             public void onActivityStopped(Activity activity) {
                 Activity topAct = TJStatCore.get().getTopAct();
                 if(topAct!=null&&topAct==activity){
-                    TJStatCore.get().setAppIntoBackground();
                     //如果当前页面的activity进入stop状态，将页面标记改为最后退出状态，防止用户从任务管理器关闭app，如果没有关闭，则在resumed改回状态
                     //并且将数据保存到数据中
 //                    TJStatCore.get().saveDataToDataBase(activity);
