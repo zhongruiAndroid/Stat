@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
+import com.github.tj.LG;
 import com.github.tj.TJ;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -59,5 +60,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onPause() {
         TJ.onPause(this);
         super.onPause();
+        LG.e("MainActivity=====================onPause");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        LG.e("MainActivity=====================onStop");
     }
 }

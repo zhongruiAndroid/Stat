@@ -20,7 +20,7 @@ public class TJStatCore {
     private String logId;
     public int intervalTimeMillis = 2000 * 1000;
     private boolean isInBackground;
-    private final int cacheSize = 5;
+    private final int cacheSize = 10;
     private static TJStatCore singleObj;
     private PageBean pageBeanBefore;//上一个页面
     private PageBean pageBeanAct;//当前页面

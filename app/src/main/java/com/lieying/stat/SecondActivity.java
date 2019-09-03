@@ -19,6 +19,7 @@ public class SecondActivity extends AppCompatActivity {
     protected void onResume() {
         TJ.onResume(this);
         super.onResume();
+        LG.e("SecondActivity=====================onResume");
     }
 
     @Override
