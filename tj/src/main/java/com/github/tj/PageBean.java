@@ -16,6 +16,7 @@ public class PageBean implements Serializable {
     public long  begin_time;
     public long  end_time;
     public String log_id;
+    // 1:第一次启动时，2:最后退出时,0:默认
     public int    page_type=-1;
     public String page_param1;
     public String page_param2;

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.provider.SyncStateContract;
 import android.support.v4.util.SparseArrayCompat;
 
 
@@ -106,38 +107,53 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
     }
 
     public boolean addDataForFragment(SparseArrayCompat<PageBean> list) {
-        SQLiteDatabase db = getWritableDatabase();
-        if(db.isOpen()==false){
-            return false;
-        }
+        SQLiteDatabase db=null;
         try {
+            db = getWritableDatabase();
             db.beginTransaction();
             for (int i = 0; i < list.size(); i++) {
                 PageBean bean=list.valueAt(i);
                 insertData(db, bean);
             }
             db.setTransactionSuccessful();
+            db.endTransaction();
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         } finally {
-            db.close();
+            closeDB(db);
         }
         return true;
     }
     public boolean addData(List<PageBean> list) {
-        SQLiteDatabase db = getWritableDatabase();
+        SQLiteDatabase db=null;
         try {
+            db = getWritableDatabase();
             db.beginTransaction();
             for (PageBean bean : list) {
                 insertData(db, bean);
             }
             db.setTransactionSuccessful();
+            db.endTransaction();
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         } finally {
-            db.close();
+            closeDB(db);
+        }
+        return true;
+    }
+
+    public boolean addData(PageBean bean) {
+        SQLiteDatabase db=null;
+        try {
+            db = getWritableDatabase();
+            insertData(db, bean);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            closeDB(db);
         }
         return true;
     }
@@ -162,32 +178,41 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
         values.put(DBConstant.create_time, bean.create_time);
         db.insert(DBConstant.T_NOVEL_PAGE, null, values);
     }
-
-
-    public long addData(PageBean bean) {
-        SQLiteDatabase db = getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(DBConstant.uid, bean.uid);
-        values.put(DBConstant.page_name, bean.page_name);
-        values.put(DBConstant.page_prev, bean.page_prev);
-        values.put(DBConstant.page_nick_name, bean.page_nick_name);
-        values.put(DBConstant.begin_time, bean.begin_time);
-        values.put(DBConstant.end_time, bean.end_time);
-        values.put(DBConstant.log_id, bean.log_id);
-        if (bean.page_type != -1) {
-            values.put(DBConstant.page_type, bean.page_type);
+    public boolean updateData(PageBean bean) {
+        SQLiteDatabase db=null;
+        try {
+            db = getWritableDatabase();
+            ContentValues values = new ContentValues();
+            values.put(DBConstant.uid, bean.uid);
+            values.put(DBConstant.page_name, bean.page_name);
+            values.put(DBConstant.page_prev, bean.page_prev);
+            values.put(DBConstant.page_nick_name, bean.page_nick_name);
+            values.put(DBConstant.begin_time, bean.begin_time);
+            values.put(DBConstant.end_time, bean.end_time);
+            values.put(DBConstant.log_id, bean.log_id);
+            if (bean.page_type != -1) {
+                values.put(DBConstant.page_type, bean.page_type);
+            }
+            values.put(DBConstant.page_param1, bean.page_param1);
+            values.put(DBConstant.page_param2, bean.page_param2);
+            values.put(DBConstant.page_param3, bean.page_param3);
+            values.put(DBConstant.data_flag, "1");
+            values.put(DBConstant.create_time, bean.create_time);
+            int update = db.update(DBConstant.T_NOVEL_PAGE, values,DBConstant.uid+" = ? ", new String[]{bean.uid});
+            return update>0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            closeDB(db);
         }
-        values.put(DBConstant.page_param1, bean.page_param1);
-        values.put(DBConstant.page_param2, bean.page_param2);
-        values.put(DBConstant.page_param3, bean.page_param3);
-        if (bean.data_flag != -1) {
-            values.put(DBConstant.data_flag, bean.data_flag);
-        }
-        values.put(DBConstant.create_time, bean.create_time);
-        long insert = db.insert(DBConstant.T_NOVEL_PAGE, null, values);
-        db.close();
-        return insert;
     }
+    private void closeDB(SQLiteDatabase db) {
+        if (db != null) {
+            db.close();
+        }
+    }
+
 
     /*public long updateMemo(MemoBean bean) {
         SQLiteDatabase db = getWritableDatabase();

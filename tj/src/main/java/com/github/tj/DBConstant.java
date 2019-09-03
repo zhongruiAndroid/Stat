@@ -8,7 +8,7 @@ import java.io.Serializable;
 public class DBConstant implements Serializable {
 
     public static final int pageSize = 20;
-    public static final String dbName = "novel_page";
+    public static final String dbName = "novel_page.db";
 
     public static final String T_NOVEL_PAGE = "T_NOVEL_PAGE";
 
@@ -20,12 +20,12 @@ public class DBConstant implements Serializable {
     public static final String begin_time ="begin_time";// 开始时间，毫秒时间戳
     public static final String end_time ="end_time";// 结束时间，毫秒时间戳
     public static final String log_id ="log_id";//冷启动应用生成一个log_id，未登录变为已登录需要改变（已登录变未登录也是）
-    public static final String page_type ="page_type";// 1:第一次启动时，2:最后退出时,0:默认
+    public static final String page_type ="page_type";// 1:第一次启动时，2:最后退出时，3:既是第一次启动又是最后退出,0:默认
     public static final String page_param1 ="page_param1";// 保留字段1
     public static final String page_param2 ="page_param2";// 保留字段2
     public static final String page_param3 ="page_param3";// 保留字段3
 
-    public static final String data_flag ="data_flag";// 0删除，1没删除，做逻辑删除，不做物理删除
+    public static final String data_flag ="data_flag";// 0删除，1没删除，debug做逻辑删除，不做物理删除，方便测试，release做物理删除
     public static final String create_time ="createTime";// 数据创建时间
 
     /**************************建表sql************************************/

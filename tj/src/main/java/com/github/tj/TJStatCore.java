@@ -2,6 +2,7 @@ package com.github.tj;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.support.v4.app.Fragment;
 import android.support.v4.util.SparseArrayCompat;
 
@@ -17,14 +18,18 @@ import java.util.UUID;
  */
 public class TJStatCore {
     private String logId;
+    public int intervalTimeMillis=2000*1000;
+    private boolean isInBackground;
     private final int cacheSize=5;
     private static TJStatCore singleObj;
-    private PageBean pageBeanAct;
-    private List pageList;
+    private PageBean pageBeanBefore;//上一个页面
+    private PageBean pageBeanAct;//当前页面
+    private PageBean advertPage;
+//    private List pageList;
     private SparseArrayCompat<PageBean> pageBeanFragList;
 
     private TJStatCore() {
-        pageList=new ArrayList();
+//        pageList=new ArrayList();
         pageBeanAct =new PageBean();
         pageBeanFragList =new SparseArrayCompat<>();
     }
@@ -86,47 +91,111 @@ public class TJStatCore {
         if(activity==null){
             throw new IllegalStateException("onResume() activity不能为空");
         }
+        //设置最上层页面Activity
         setTopAct(activity);
         String className = activity.getClass().getSimpleName();
         if(pageName==null){
             pageName=className;
         }
         long intoTime = Calendar.getInstance().getTimeInMillis();
-
-        //进入一个页面时，如果存在endtime说明需要把上个页面数据放到list里面去
-        if(pageBeanAct.end_time>0){
-            pageList.add(pageBeanAct);
-            //如果数据超过5个就放到数据库里面去
-            if(pageList.size()>cacheSize){
-                saveDataToDataBase(activity);
-            }
-        }else{
-            //没有endtime说明第一次进入
-            pageBeanAct.page_type=1;
+        /**********第1种情况************/
+        if(pageBeanBefore==null){
+            //如果没有before页面，则为启动app进入的第一个界面
+            setDataForPage(pageBeanAct,1,"",className,pageName,intoTime);
+            return;
         }
-        //获取上一个页面name
-        String prePageName=pageBeanAct.page_name;
 
+        /**********第2种情况************/
+        if(pageBeanBefore.page_name.equals(className)){
+            //app从后台回到当前页面
+            pageBeanBefore=null;
+            pageBeanAct.reset();
+            setDataForPage(pageBeanAct,1,"",className,pageName,intoTime);
+            return;
+        }
+
+        /**********第3种情况************/
+        //热启动显示广告页的时候，这个时候不将广告页面作为启动页,属于定制性业务需求
+        Intent intent = activity.getIntent();
+        if(intent!=null&&intent.getStringExtra(TJ.TJ_IGNORE_PAGE)!=null){
+            advertPage=new PageBean();
+            if(className.equals(pageName)){
+                pageName="热启动广告页面";
+            }
+            setDataForPage(advertPage,0,"",className,pageName,intoTime);
+            return;
+        }
+
+        /**********第4种情况************/
+        //进入app之后的页面跳转
         //需要重置属性，保存新页面数据
         pageBeanAct.reset();
 
-        pageBeanAct.page_prev=prePageName;
-        pageBeanAct.page_name=className;
-        pageBeanAct.page_nick_name=pageName;
-        pageBeanAct.begin_time=intoTime;
-        pageBeanAct.log_id=logId;
+        //pageBeanBefore.page_name获取上一个页面name
+        setDataForPage(pageBeanAct,0,pageBeanBefore.page_name,className,pageName,intoTime);
     }
     public void onPause(Activity activity,String pageName) {
         if(activity==null){
             throw new IllegalStateException("onPause() activity不能为空");
         }
-        String className = activity.getClass().getSimpleName();
+       /* String className = activity.getClass().getSimpleName();
         if(pageName==null){
             pageName=className;
-        }
+        }*/
         long outTime = Calendar.getInstance().getTimeInMillis();
+        /**********onResume中的第3种情况************/
+        //热启动显示广告页的时候，这个时候不将广告页面作为启动页,属于定制性业务需求
+        Intent intent = activity.getIntent();
+        if(advertPage!=null&&intent!=null&&intent.getStringExtra(TJ.TJ_IGNORE_PAGE)!=null){
+            advertPage.end_time=outTime;
+            SaveHelper.addData(activity,advertPage);
+            return;
+        }
+
         pageBeanAct.end_time=outTime;
+        //跳转页面，或者结束页面时，将当前页面设置为上一个页面
+        if(pageBeanBefore==null){
+            pageBeanBefore=new PageBean();
+        }
+        nowPageCopyToBefore(pageBeanAct,pageBeanBefore);
+
+        //离开时保存页面数据，如果是切换到后台，10S之内回到该页面时，需要将数据更改，而不是添加新数据
+        SaveHelper.addData(activity,pageBeanBefore);
     }
+
+    private void nowPageCopyToBefore(PageBean now,PageBean before){
+        before.uid=now.uid;
+        before.create_time=now.create_time;
+        before.page_name=now.page_name;
+        before.page_prev=now.page_prev;
+        before.page_nick_name=now.page_nick_name;
+        before.begin_time=now.begin_time;
+        before.end_time=now.end_time;
+        before.log_id=now.log_id;
+        before.page_type=now.page_type;
+        before.page_param1=now.page_param1;
+        before.page_param2=now.page_param2;
+        before.page_param3=now.page_param3;
+        before.data_flag=now.data_flag;
+    }
+    /**
+     *
+     * @param pageBeanAct
+     * @param pageType 1:第一次启动时，2:最后退出时,0:默认
+     * @param pagePrev 上一个界面
+     * @param pageName 当前界面
+     * @param pageNickName 当前界面备注
+     * @param beginTime 进入时间
+     */
+    private void setDataForPage(PageBean pageBeanAct,int pageType,String pagePrev,String pageName,String pageNickName,long beginTime){
+        pageBeanAct.page_type=pageType;
+        pageBeanAct.page_prev=pagePrev;
+        pageBeanAct.page_name=pageName;
+        pageBeanAct.page_nick_name=pageNickName;
+        pageBeanAct.begin_time=beginTime;
+        pageBeanAct.log_id=logId;
+    }
+
     /******************************************************************/
 
     public void onResume(Fragment fragment) {
@@ -159,10 +228,11 @@ public class TJStatCore {
         pageBean.log_id=logId;
 
         pageBeanFragList.put(hashCode,pageBean);
-        if(pageBean.end_time>0&&pageBeanFragList.size()>cacheSize){
+        /*if(pageBean.end_time>0&&pageBeanFragList.size()>cacheSize){
             //如果数据超过5个就放到数据库里面去
             saveDataToDataBaseForFragment(fragment.getActivity());
-        }
+            //现在为了保证数据准确性，只要是页面执行onpause就保存数据,所以注释该代码
+        }*/
     }
     public void onPause(Fragment fragment,String pageName) {
         if(fragment==null){
@@ -175,18 +245,19 @@ public class TJStatCore {
         }
         long outTime = Calendar.getInstance().getTimeInMillis();
         pageBean.end_time=outTime;
+
     }
 
 
 
     //如果app切换到后台，也要放到数据库里面去，防止用户从任务管理器关闭app
     public void saveDataToDataBase(Context context){
-        boolean addResult = SaveHelper.saveDataToSqlLite(context, pageList);
+       /* boolean addResult = SaveHelper.saveDataToSqlLite(context, pageList);
         if(addResult){
             pageList.clear();
         }
         //添加Activity的同时也把fragment添加进去
-        saveDataToDataBaseForFragment(context);
+        saveDataToDataBaseForFragment(context);*/
     }
     public void saveDataToDataBaseForFragment(Context context){
         boolean addResult = SaveHelper.addDataForFragment(context, pageBeanFragList);
@@ -195,10 +266,17 @@ public class TJStatCore {
         }
     }
 
-    public void setExitFlag() {
-        pageBeanAct.page_type=2;
+    public void setExitFlag(Context context) {
+        //如果app开始处在后台，就把当前页设置为最后退出页(同时也有可能是第一次启动页)
+        // 1:第一次启动时，2:最后退出时，3:既是第一次启动又是最后退出,0:默认
+        if(pageBeanAct.page_type==1){
+            pageBeanAct.page_type=3;
+        }else{
+            pageBeanAct.page_type=2;
+        }
+         SaveHelper.updateData(context, pageBeanAct);
     }
-    public void removeExitFlag() {
-        pageBeanAct.page_type=0;
+    public void setAppIntoBackground(){
+        isInBackground=true;
     }
 }

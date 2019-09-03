@@ -15,4 +15,10 @@ public class SaveHelper {
     public static boolean addDataForFragment(Context context,SparseArrayCompat<PageBean> list){
         return DBManager.get(context).addDataForFragment(list);
     }
+    public static boolean addData(Context context,PageBean bean){
+        return DBManager.get(context).addData(bean);
+    }
+    public static boolean updateData(Context context,PageBean bean){
+        return DBManager.get(context).updateData(bean);
+    }
 }

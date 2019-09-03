@@ -5,6 +5,7 @@ import android.os.Bundle;
 
 import com.github.tj.LG;
 import com.github.tj.TJ;
+import com.github.tj.TJStatCore;
 
 public class SecondActivity extends AppCompatActivity {
 
