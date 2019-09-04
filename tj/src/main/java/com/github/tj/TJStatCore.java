@@ -2,9 +2,9 @@ package com.github.tj;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.support.v4.app.Fragment;
 import android.support.v4.util.SparseArrayCompat;
+import android.text.TextUtils;
 
 import java.security.MessageDigest;
 import java.util.Calendar;
@@ -18,16 +18,22 @@ public class TJStatCore {
     private String logId;
     private final int cacheSize = 10;
     private static TJStatCore singleObj;
-    private PageBean pageBeanBefore;//上一个页面
-    private PageBean pageBeanAct;//当前页面
-    private PageBean advertPage;
+    private PageBean pageBeanBefore;//上一个act页面
+    private PageBean pageBeanAct;//当前act页面
+
+
+    //判断fragment是否发生了页面切换
+    private boolean isChangePage=true;
+    private PageBean pageBeanBeforeFrag;//上一个frag页面
+    private PageBean pageBeanFrag;//当前frag页面
+
+//    private PageBean advertPage;
     //    private List pageList;
-    private SparseArrayCompat<PageBean> pageBeanFragList;
 
     private TJStatCore() {
 //        pageList=new ArrayList();
         pageBeanAct = new PageBean();
-        pageBeanFragList = new SparseArrayCompat<>();
+        pageBeanFrag = new PageBean();
     }
 
     public static TJStatCore get() {
@@ -100,8 +106,6 @@ public class TJStatCore {
         }
         long intoTime = Calendar.getInstance().getTimeInMillis();
         /**********第1种情况************/
-        //热启动显示广告页的时候，这个时候不将广告页面作为启动页,属于定制性业务需求
-
         if (pageBeanBefore == null) {
             //如果没有before页面，则为启动app进入的第一个界面,此时改变logid
             changeLogId();
@@ -136,7 +140,6 @@ public class TJStatCore {
         //进入app之后的页面跳转
         //需要重置属性，保存新页面数据
         pageBeanAct.reset();
-
         //pageBeanBefore.page_name获取上一个页面name
         setDataForPage(pageBeanAct, PageBean.PAGE_TYPE_OTHER,pageBeanBefore.page_name, className, pageName, intoTime);
     }
@@ -217,64 +220,64 @@ public class TJStatCore {
         if (fragment == null) {
             throw new IllegalStateException("onResume() fragment不能为空");
         }
-        long intoTime = Calendar.getInstance().getTimeInMillis();
+        if(isChangePage){
+            isChangePage=!isChangePage;
+        }else{
+            //单个activity多个fragment同时显示时，只记录第一个
+            return;
+        }
         String className = fragment.getClass().getSimpleName();
         if (pageName == null) {
             pageName = className;
         }
-        //一个activity里面可以有多个fragment，所以把fragment的页面信息提前储存到list里面
-        int hashCode = fragment.getClass().getName().hashCode();
-        PageBean pageBean = pageBeanFragList.get(hashCode);
-        if (pageBean == null) {
-            pageBean = new PageBean();
-        }
-        //获取activity上一个页面name
-        String prePageName = pageBeanAct.page_prev;
-        pageBean.page_prev = prePageName;
-        pageBean.page_name = className;
-        pageBean.page_nick_name = pageName;
-        pageBean.begin_time = intoTime;
-        pageBean.log_id = logId;
+        long intoTime = Calendar.getInstance().getTimeInMillis();
+        /**********第1种情况************/
 
-        pageBeanFragList.put(hashCode, pageBean);
-        /*if(pageBean.end_time>0&&pageBeanFragList.size()>cacheSize){
-            //如果数据超过5个就放到数据库里面去
-            saveDataToDataBaseForFragment(fragment.getActivity());
-            //现在为了保证数据准确性，只要是页面执行onpause就保存数据,所以注释该代码
+        if (pageBeanBeforeFrag == null) {
+            setDataForPage(pageBeanFrag, 1, "", className, pageName, intoTime);
+            return;
+        }
+        /* *//**********第3种情况************//*
+        //热启动显示广告页的时候，这个时候不将广告页面作为启动页,属于定制性业务需求
+         沟通结果：不考虑广告页和启动页面
         }*/
+
+        /**********第2种情况************/
+        if (pageBeanBeforeFrag.page_name.equals(className)) {
+            pageBeanBeforeFrag = null;
+            pageBeanFrag.reset();
+            setDataForPage(pageBeanFrag, 1, "", className, pageName, intoTime);
+            return;
+        }
+
+
+        /**********第4种情况************/
+        //进入app之后的页面跳转
+        //需要重置属性，保存新页面数据
+        pageBeanFrag.reset();
+        //pageBeanBefore.page_name获取上一个页面name
+        setDataForPage(pageBeanFrag, PageBean.PAGE_TYPE_OTHER,pageBeanBeforeFrag.page_name, className, pageName, intoTime);
     }
 
     public void onPause(Fragment fragment, String pageName) {
         if (fragment == null) {
             throw new IllegalStateException("onPause() fragment不能为空");
         }
-        int hashCode = fragment.getClass().getName().hashCode();
-        PageBean pageBean = pageBeanFragList.get(hashCode);
-        if (pageBean == null) {
-            return;
-        }
+        isChangePage =true;
         long outTime = Calendar.getInstance().getTimeInMillis();
-        pageBean.end_time = outTime;
-
-    }
-
-
-    //如果app切换到后台，也要放到数据库里面去，防止用户从任务管理器关闭app
-    public void saveDataToDataBase(Context context) {
-       /* boolean addResult = SaveHelper.saveDataToSqlLite(context, pageList);
-        if(addResult){
-            pageList.clear();
+        pageBeanFrag.end_time = outTime;
+        //跳转页面，或者结束页面时，将当前页面设置为上一个页面
+        if (pageBeanBeforeFrag == null) {
+            pageBeanBeforeFrag = new PageBean();
         }
-        //添加Activity的同时也把fragment添加进去
-        saveDataToDataBaseForFragment(context);*/
+        nowPageCopyToBefore(pageBeanFrag, pageBeanBeforeFrag);
+
+        //离开时保存页面数据
+        SaveHelper.addData(fragment.getActivity(), pageBeanBeforeFrag);
+
     }
 
-    public void saveDataToDataBaseForFragment(Context context) {
-        boolean addResult = SaveHelper.addDataForFragment(context, pageBeanFragList);
-        if (addResult) {
-            pageBeanFragList.clear();
-        }
-    }
+
 
     public void setExitFlag(Context context) {
         //如果app开始处在后台，就把当前页设置为最后退出页(同时也有可能是第一次启动页)
@@ -285,6 +288,13 @@ public class TJStatCore {
             pageBeanAct.page_type = PageBean.PAGE_TYPE_OUT;
         }
         SaveHelper.updateData(context, pageBeanAct);
+
+        //如果当前activity有fragment页面信息，也保存
+        if(pageBeanFrag!=null&&TextUtils.isEmpty(pageBeanFrag.page_name)==false){
+            //fragment页面的type跟随当前activity
+            pageBeanFrag.page_type=pageBeanAct.page_type;
+            SaveHelper.updateData(context, pageBeanFrag);
+        }
     }
 
 
