@@ -18,7 +18,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         findViewById(R.id.btJump).setOnClickListener(this);
 
-        TJ.init(this);
     }
     @Override
     public void onClick(View v) {

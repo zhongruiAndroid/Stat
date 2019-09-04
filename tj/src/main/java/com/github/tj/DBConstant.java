@@ -19,8 +19,8 @@ public class DBConstant implements Serializable {
     public static final String page_nick_name ="page_nick_name";// 用户所在界面的备注
     public static final String begin_time ="begin_time";// 开始时间，毫秒时间戳
     public static final String end_time ="end_time";// 结束时间，毫秒时间戳
-    public static final String log_id ="log_id";//冷启动应用生成一个log_id，未登录变为已登录需要改变（已登录变未登录也是）
-    public static final String page_type ="page_type";// 1:第一次启动时，2:最后退出时，3:既是第一次启动又是最后退出,0:默认
+    public static final String log_id ="log_id";//启动应用生成一个log_id，未登录变为已登录需要改变（已登录变未登录也是）
+    public static final String page_type ="page_type";// 1:第一次启动时，2:最后退出时，3:中间 4:既是第一次启动又是最后退出,
     public static final String page_param1 ="page_param1";// 保留字段1
     public static final String page_param2 ="page_param2";// 保留字段2
     public static final String page_param3 ="page_param3";// 保留字段3
@@ -38,7 +38,7 @@ public class DBConstant implements Serializable {
             begin_time+" varchar," +
             end_time+" varchar," +
             log_id+" varchar," +
-            page_type+" integer DEFAULT 0,"+
+            page_type+" integer DEFAULT 3,"+
             page_param1+" varchar," +
             page_param2+" varchar," +
             page_param3+"  varchar," +

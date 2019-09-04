@@ -7,9 +7,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.util.SparseArrayCompat;
 
 import java.security.MessageDigest;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -102,32 +100,37 @@ public class TJStatCore {
         }
         long intoTime = Calendar.getInstance().getTimeInMillis();
         /**********第1种情况************/
+        //热启动显示广告页的时候，这个时候不将广告页面作为启动页,属于定制性业务需求
+
         if (pageBeanBefore == null) {
-            //如果没有before页面，则为启动app进入的第一个界面
+            //如果没有before页面，则为启动app进入的第一个界面,此时改变logid
+            changeLogId();
             setDataForPage(pageBeanAct, 1, "", className, pageName, intoTime);
             return;
         }
+       /* *//**********第3种情况************//*
+        沟通结果：不考虑广告页和启动页面
+        //热启动显示广告页的时候，这个时候不将广告页面作为启动页,属于定制性业务需求
+        if (intent != null && intent.getStringExtra(TJ.TJ_IGNORE_ADVERT_PAGE) != null) {
+            advertPage = new PageBean();
+            if (className.equals(pageName)) {
+                pageName = "广告页面";
+            }
+            advertPage.data_type=PageBean.DATA_TYPE_ADVERT;
+            setDataForPage(advertPage, PageBean.PAGE_TYPE_OTHER, "", className, pageName, intoTime);
+            return;
+        }*/
 
         /**********第2种情况************/
         if (pageBeanBefore.page_name.equals(className)) {
-            //app从后台回到当前页面
+            //app从后台回到当前页面,此时改变logid
+            changeLogId();
             pageBeanBefore = null;
             pageBeanAct.reset();
             setDataForPage(pageBeanAct, 1, "", className, pageName, intoTime);
             return;
         }
 
-        /**********第3种情况************/
-        //热启动显示广告页的时候，这个时候不将广告页面作为启动页,属于定制性业务需求
-        Intent intent = activity.getIntent();
-        if (intent != null && intent.getStringExtra(TJ.TJ_IGNORE_PAGE) != null) {
-            advertPage = new PageBean();
-            if (className.equals(pageName)) {
-                pageName = "热启动广告页面";
-            }
-            setDataForPage(advertPage, 0, "", className, pageName, intoTime);
-            return;
-        }
 
         /**********第4种情况************/
         //进入app之后的页面跳转
@@ -135,7 +138,7 @@ public class TJStatCore {
         pageBeanAct.reset();
 
         //pageBeanBefore.page_name获取上一个页面name
-        setDataForPage(pageBeanAct, 0, pageBeanBefore.page_name, className, pageName, intoTime);
+        setDataForPage(pageBeanAct, PageBean.PAGE_TYPE_OTHER,pageBeanBefore.page_name, className, pageName, intoTime);
     }
 
     public void onPause(Activity activity, String pageName) {
@@ -147,14 +150,14 @@ public class TJStatCore {
             pageName=className;
         }*/
         long outTime = Calendar.getInstance().getTimeInMillis();
-        /**********onResume中的第3种情况************/
+       /* *//**********onResume中的第3种情况************//*
         //热启动显示广告页的时候，这个时候不将广告页面作为启动页,属于定制性业务需求
         Intent intent = activity.getIntent();
-        if (advertPage != null && intent != null && intent.getStringExtra(TJ.TJ_IGNORE_PAGE) != null) {
+        if (advertPage != null && intent != null && intent.getStringExtra(TJ.TJ_IGNORE_ADVERT_PAGE) != null) {
             advertPage.end_time = outTime;
             SaveHelper.addData(activity, advertPage);
             return;
-        }
+        }*/
 
         pageBeanAct.end_time = outTime;
         //跳转页面，或者结束页面时，将当前页面设置为上一个页面
@@ -163,7 +166,7 @@ public class TJStatCore {
         }
         nowPageCopyToBefore(pageBeanAct, pageBeanBefore);
 
-        //离开时保存页面数据，如果是切换到后台，10S之内回到该页面时，需要将数据更改，而不是添加新数据
+        //离开时保存页面数据
         SaveHelper.addData(activity, pageBeanBefore);
     }
 
@@ -185,7 +188,7 @@ public class TJStatCore {
 
     /**
      * @param pageBeanAct
-     * @param pageType     1:第一次启动时，2:最后退出时,0:默认
+     * @param pageType     1:第一次启动时，2:最后退出时，3:中间 4:既是第一次启动又是最后退出,
      * @param pagePrev     上一个界面
      * @param pageName     当前界面
      * @param pageNickName 当前界面备注
@@ -276,10 +279,10 @@ public class TJStatCore {
     public void setExitFlag(Context context) {
         //如果app开始处在后台，就把当前页设置为最后退出页(同时也有可能是第一次启动页)
         // 1:第一次启动时，2:最后退出时，3:既是第一次启动又是最后退出,0:默认
-        if (pageBeanAct.page_type == 1) {
-            pageBeanAct.page_type = 3;
+        if (pageBeanAct.page_type == PageBean.PAGE_TYPE_INTO) {
+            pageBeanAct.page_type = PageBean.PAGE_TYPE_INTO_OUT;
         } else {
-            pageBeanAct.page_type = 2;
+            pageBeanAct.page_type = PageBean.PAGE_TYPE_OUT;
         }
         SaveHelper.updateData(context, pageBeanAct);
     }

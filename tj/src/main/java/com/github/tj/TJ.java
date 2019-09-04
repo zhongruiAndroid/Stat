@@ -10,7 +10,9 @@ import android.util.Log;
  *   created by android on 2019/8/29
  */
 public class TJ {
-    public static final String TJ_IGNORE_PAGE = "TJ_IGNORE_PAGE";
+    //广告页面
+    public static final String TJ_IGNORE_ADVERT_PAGE = "TJ_IGNORE_ADVERT_PAGE";
+//    public static final String TJ_IGNORE_SPLASH_PAGE = "TJ_IGNORE_SPLASH_PAGE";
 
     public static void onResume(Activity activity) {
         onResume(activity, null);
