@@ -62,6 +62,9 @@ public class TJ {
         //每次启动app应用之后的页面信息上报，接口需要一个logid
         TJStatCore.get().changeLogId();
         Application application = activity.getApplication();
+        if(application==null){
+            throw new IllegalStateException("no application");
+        }
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
