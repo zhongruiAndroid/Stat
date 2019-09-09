@@ -51,6 +51,7 @@ public class DBConstant implements Serializable {
     public static final String click_id ="click_id";// 事件id
     public static final String click_name ="click_name";// 事件名字
     public static final String param_attr ="param_attr";// 参数json
+    public static final String event_type ="event_type";//事件类型0：广告点击事件，1：其他事件
 
     /**************************广告事件和普通事件点击统计建表sql************************************/
     public static final String CT_NOVEL_CLICK_ADVERT_SQL = "create table "+T_NOVEL_CLICK_ADVERT+" (" +
@@ -65,6 +66,7 @@ public class DBConstant implements Serializable {
             page_param1+" varchar," +
             page_param2+" varchar," +
             page_param3+"  varchar," +
+            event_type+"  varchar DEFAULT 1," +
             data_flag+"  varchar DEFAULT 1," +
             create_time +"  varchar NOT NULL )";
 }

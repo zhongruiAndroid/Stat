@@ -113,33 +113,13 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
     }
 
     public boolean addDataForFragment(SparseArrayCompat<PageBean> list) {
-        SQLiteDatabase db=null;
+        SQLiteDatabase db = null;
         try {
             db = getWritableDatabase();
-            db.beginTransaction();
             for (int i = 0; i < list.size(); i++) {
-                PageBean bean=list.valueAt(i);
+                PageBean bean = list.valueAt(i);
                 insertData(db, bean);
             }
-            db.setTransactionSuccessful();
-            db.endTransaction();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            closeDB(db);
-        }
-        return true;
-    }
-    public boolean addData(List<PageBean> list) {
-        SQLiteDatabase db=null;
-        try {
-            db = getWritableDatabase();
-            db.beginTransaction();
-            for (PageBean bean : list) {
-                insertData(db, bean);
-            }
-            db.setTransactionSuccessful();
             db.endTransaction();
         } catch (Exception e) {
             e.printStackTrace();
@@ -150,8 +130,24 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
         return true;
     }
 
+    public boolean addData(List<PageBean> list) {
+        SQLiteDatabase db = null;
+        try {
+            db = getWritableDatabase();
+            for (PageBean bean : list) {
+                insertData(db, bean);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            closeDB(db);
+        }
+        return true;
+    }
+
     public boolean addData(PageBean bean) {
-        SQLiteDatabase db=null;
+        SQLiteDatabase db = null;
         try {
             db = getWritableDatabase();
             insertData(db, bean);
@@ -163,19 +159,20 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
         }
         return true;
     }
+
     private void insertData(SQLiteDatabase db, PageBean bean) {
         ContentValues values = new ContentValues();
         values.put(DBConstant.uid, bean.uid);
         values.put(DBConstant.page_name, bean.page_name);
-        if(TextUtils.isEmpty(bean.page_prev)){
-            bean.page_prev=PageBean.APP_LAUNCH;
+        if (TextUtils.isEmpty(bean.page_prev)) {
+            bean.page_prev = PageBean.APP_LAUNCH;
         }
         values.put(DBConstant.page_prev, bean.page_prev);
         values.put(DBConstant.page_nick_name, bean.page_nick_name);
         values.put(DBConstant.begin_time, bean.begin_time);
         values.put(DBConstant.end_time, bean.end_time);
         values.put(DBConstant.page_log_id, bean.page_log_id);
-        if (TextUtils.isEmpty(bean.page_type)==false) {
+        if (TextUtils.isEmpty(bean.page_type) == false) {
             values.put(DBConstant.page_type, bean.page_type);
         }
         values.put(DBConstant.page_param1, bean.page_param1);
@@ -187,22 +184,23 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
         values.put(DBConstant.create_time, bean.create_time);
         db.insert(DBConstant.T_NOVEL_PAGE, null, values);
     }
+
     public boolean updateData(PageBean bean) {
-        SQLiteDatabase db=null;
+        SQLiteDatabase db = null;
         try {
             db = getWritableDatabase();
             ContentValues values = new ContentValues();
             values.put(DBConstant.uid, bean.uid);
             values.put(DBConstant.page_name, bean.page_name);
-            if(TextUtils.isEmpty(bean.page_prev)){
-                bean.page_prev=PageBean.APP_LAUNCH;
+            if (TextUtils.isEmpty(bean.page_prev)) {
+                bean.page_prev = PageBean.APP_LAUNCH;
             }
             values.put(DBConstant.page_prev, bean.page_prev);
             values.put(DBConstant.page_nick_name, bean.page_nick_name);
             values.put(DBConstant.begin_time, bean.begin_time);
             values.put(DBConstant.end_time, bean.end_time);
             values.put(DBConstant.page_log_id, bean.page_log_id);
-            if (TextUtils.isEmpty(bean.page_type)==false) {
+            if (TextUtils.isEmpty(bean.page_type) == false) {
                 values.put(DBConstant.page_type, bean.page_type);
             }
             values.put(DBConstant.page_param1, bean.page_param1);
@@ -210,8 +208,8 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
             values.put(DBConstant.page_param3, bean.page_param3);
             values.put(DBConstant.data_flag, "1");
             values.put(DBConstant.create_time, bean.create_time);
-            int update = db.update(DBConstant.T_NOVEL_PAGE, values,DBConstant.uid+" = ? ", new String[]{bean.uid});
-            return update>0;
+            int update = db.update(DBConstant.T_NOVEL_PAGE, values, DBConstant.uid + " = ? ", new String[]{bean.uid});
+            return update > 0;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -219,11 +217,13 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
             closeDB(db);
         }
     }
+
     private void closeDB(SQLiteDatabase db) {
         if (db != null) {
             db.close();
         }
     }
+
     private void closeCursor(Cursor cursor) {
         if (cursor != null) {
             cursor.close();
@@ -231,9 +231,9 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
     }
 
     public List<PageBean> getData() {
-        List<PageBean>list=new ArrayList<>();
-        SQLiteDatabase db=null;
-        Cursor cursor=null;
+        List<PageBean> list = new ArrayList<>();
+        SQLiteDatabase db = null;
+        Cursor cursor = null;
         try {
             db = getReadableDatabase();
 
@@ -247,18 +247,18 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
                             DBConstant.end_time,
                             DBConstant.page_log_id,
                             DBConstant.page_type},
-                    DBConstant.data_flag+" = ? ",new String[]{"1"},null,null,null);
-            while (cursor.moveToNext()){
-                PageBean bean=new PageBean();
-                bean.uid=cursor.getString(cursor.getColumnIndex(DBConstant.uid));
+                    DBConstant.data_flag + " = ? ", new String[]{"1"}, null, null, null);
+            while (cursor.moveToNext()) {
+                PageBean bean = new PageBean();
+                bean.uid = cursor.getString(cursor.getColumnIndex(DBConstant.uid));
 
-                bean.page_name=cursor.getString(cursor.getColumnIndex(DBConstant.page_name));
-                bean.page_prev=cursor.getString(cursor.getColumnIndex(DBConstant.page_prev));
-                bean.page_nick_name=cursor.getString(cursor.getColumnIndex(DBConstant.page_nick_name));
-                bean.begin_time=cursor.getString(cursor.getColumnIndex(DBConstant.begin_time));
-                bean.end_time=cursor.getString(cursor.getColumnIndex(DBConstant.end_time));
-                bean.page_log_id =cursor.getString(cursor.getColumnIndex(DBConstant.page_log_id));
-                bean.page_type=cursor.getString(cursor.getColumnIndex(DBConstant.page_type));
+                bean.page_name = cursor.getString(cursor.getColumnIndex(DBConstant.page_name));
+                bean.page_prev = cursor.getString(cursor.getColumnIndex(DBConstant.page_prev));
+                bean.page_nick_name = cursor.getString(cursor.getColumnIndex(DBConstant.page_nick_name));
+                bean.begin_time = cursor.getString(cursor.getColumnIndex(DBConstant.begin_time));
+                bean.end_time = cursor.getString(cursor.getColumnIndex(DBConstant.end_time));
+                bean.page_log_id = cursor.getString(cursor.getColumnIndex(DBConstant.page_log_id));
+                bean.page_type = cursor.getString(cursor.getColumnIndex(DBConstant.page_type));
 
                 list.add(bean);
             }
@@ -272,29 +272,27 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
         }
     }
 
-    public void deleteData(List<PageBean>list) {
-        if(list==null){
+
+    public void deleteData(List<PageBean> list) {
+        if (list == null) {
             return;
         }
 
-        SQLiteDatabase db=null;
+        SQLiteDatabase db = null;
         try {
             db = getWritableDatabase();
-            db.beginTransaction();
             for (int i = 0; i < list.size(); i++) {
                 PageBean pageBean = list.get(i);
-                if(TJStatCore.get().isDebug()){
+                if (TJStatCore.get().isDebug()) {
                     //debug模式逻辑删除,便于测试
                     ContentValues values = new ContentValues();
-                    values.put(DBConstant.data_flag,"0");
-                    db.update(DBConstant.T_NOVEL_PAGE,values,DBConstant.uid+"=?",new String[]{pageBean.uid});
-                }else{
+                    values.put(DBConstant.data_flag, "0");
+                    db.update(DBConstant.T_NOVEL_PAGE, values, DBConstant.uid + "=?", new String[]{pageBean.uid});
+                } else {
                     //release模式物理删除,防止数据过多
-                    db.delete(DBConstant.T_NOVEL_PAGE,DBConstant.uid+"=?",new String[]{pageBean.uid});
+                    db.delete(DBConstant.T_NOVEL_PAGE, DBConstant.uid + "=?", new String[]{pageBean.uid});
                 }
             }
-            db.setTransactionSuccessful();
-            db.endTransaction();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -302,9 +300,33 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
         }
     }
 
+    public void deleteDataForLogId(String logId) {
+        if (TextUtils.isEmpty(logId)) {
+            return;
+        }
+        SQLiteDatabase db = null;
+        try {
+            db = getWritableDatabase();
+            db.delete(DBConstant.T_NOVEL_PAGE, DBConstant.page_log_id + "=?", new String[]{logId});
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeDB(db);
+        }
+    }
 
     public boolean addAdvertClickData(ClickBean bean) {
-        SQLiteDatabase db=null;
+        bean.event_type = "0";
+        return addEventClickData(bean);
+    }
+
+    public boolean addOtherClickData(ClickBean bean) {
+        bean.event_type = "1";
+        return addEventClickData(bean);
+    }
+
+    public boolean addEventClickData(ClickBean bean) {
+        SQLiteDatabase db = null;
         try {
             db = getWritableDatabase();
             ContentValues values = new ContentValues();
@@ -321,6 +343,7 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
             if (bean.data_flag != -1) {
                 values.put(DBConstant.data_flag, bean.data_flag);
             }
+            values.put(DBConstant.event_type, bean.event_type);
             values.put(DBConstant.create_time, bean.create_time);
             db.insert(DBConstant.T_NOVEL_CLICK_ADVERT, null, values);
         } catch (Exception e) {
@@ -331,10 +354,21 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
         }
         return true;
     }
+
+    //广告事件
     public List<AdvertUploadBean> getAdvertClickData() {
-        List<AdvertUploadBean>list=new ArrayList<>();
-        SQLiteDatabase db=null;
-        Cursor cursor=null;
+        return getEventClickData("0");
+    }
+
+    //其他事件
+    public List<AdvertUploadBean> getOtherClickData() {
+        return getEventClickData("1");
+    }
+
+    public List<AdvertUploadBean> getEventClickData(String eventType) {
+        List<AdvertUploadBean> list = new ArrayList<>();
+        SQLiteDatabase db = null;
+        Cursor cursor = null;
         try {
             db = getReadableDatabase();
 
@@ -346,22 +380,22 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
                             DBConstant.page_nick_name,
                             DBConstant.begin_time,
                             DBConstant.param_attr},
-                    DBConstant.data_flag+" = ? ",new String[]{"1"},null,null,null);
-            while (cursor.moveToNext()){
-                AdvertUploadBean bean=new AdvertUploadBean();
-                bean.uid=cursor.getString(cursor.getColumnIndex(DBConstant.uid));
+                    DBConstant.data_flag + " = ? and " + DBConstant.event_type + " = ? ", new String[]{"1", eventType}, null, null, null);
+            while (cursor.moveToNext()) {
+                AdvertUploadBean bean = new AdvertUploadBean();
+                bean.uid = cursor.getString(cursor.getColumnIndex(DBConstant.uid));
                 //接口需要的advert_name对应click_id
                 //接口需要的advert_nick_name对应click_name
                 //接口需要的advert_page_name对应page_nick_name
-                bean.advert_name=cursor.getString(cursor.getColumnIndex(DBConstant.click_id));
-                bean.advert_nick_name=cursor.getString(cursor.getColumnIndex(DBConstant.click_name));
-                bean.advert_page_name=cursor.getString(cursor.getColumnIndex(DBConstant.page_nick_name));
-                bean.begin_time=cursor.getString(cursor.getColumnIndex(DBConstant.begin_time));
-                String paramJson=cursor.getString(cursor.getColumnIndex(DBConstant.param_attr));
+                bean.advert_name = cursor.getString(cursor.getColumnIndex(DBConstant.click_id));
+                bean.advert_nick_name = cursor.getString(cursor.getColumnIndex(DBConstant.click_name));
+                bean.advert_page_name = cursor.getString(cursor.getColumnIndex(DBConstant.page_nick_name));
+                bean.begin_time = cursor.getString(cursor.getColumnIndex(DBConstant.begin_time));
+                String paramJson = cursor.getString(cursor.getColumnIndex(DBConstant.param_attr));
 
                 ParamAttr paramAttr = getParamAttr(paramJson);
-                bean.book_id=paramAttr.book_id;
-                bean.chapter_id=paramAttr.chapter_id;
+                bean.book_id = paramAttr.book_id;
+                bean.chapter_id = paramAttr.chapter_id;
 
                 list.add(bean);
             }
@@ -376,73 +410,78 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
     }
 
     private ParamAttr getParamAttr(String json) {
-        ParamAttr paramAttr=new ParamAttr();
-        if(TextUtils.isEmpty(json)){
+        ParamAttr paramAttr = new ParamAttr();
+        if (TextUtils.isEmpty(json)) {
             return paramAttr;
         }
         try {
-            JSONObject jsonObject=new JSONObject(json);
+            JSONObject jsonObject = new JSONObject(json);
             Class<?> aClass = paramAttr.getClass();
-            boolean flag=true;
-            while (flag){
+            boolean flag = true;
+            while (flag) {
                 Field[] declaredFields = aClass.getDeclaredFields();
-                if(declaredFields==null){
+                if (declaredFields == null) {
                     return paramAttr;
                 }
                 int length = declaredFields.length;
-                if(length==0){
+                if (length == 0) {
                     return paramAttr;
                 }
                 for (int i = 0; i < length; i++) {
                     declaredFields[i].setAccessible(true);
                     String name = declaredFields[i].getName();
-                    try{
-                        declaredFields[i].set(paramAttr,jsonObject.getString(name)==null?"":jsonObject.getString(name));
-                    }catch (Exception e){
+                    try {
+                        declaredFields[i].set(paramAttr, jsonObject.getString(name) == null ? "" : jsonObject.getString(name));
+                    } catch (Exception e) {
                     }
                 }
                 Class<?> superclass = aClass.getSuperclass();
                 String name = superclass.getName();
-                if(name.startsWith("java.")||
-                        name.startsWith("javax.")||
-                        name.startsWith("android.")||
+                if (name.startsWith("java.") ||
+                        name.startsWith("javax.") ||
+                        name.startsWith("android.") ||
                         name.startsWith("androidx.")
-                        ){
-                    flag=false;
-                }else{
-                    aClass=superclass;
+                        ) {
+                    flag = false;
+                } else {
+                    aClass = superclass;
                 }
             }
 //这里用反射获取属性名字用于json解析，这样每增加或修改一个属性 都不需要增加jsonObject.getString("属性名")代码了
 //            paramAttr.book_id=jsonObject.getString("book_id");
 //            paramAttr.chapter_id=jsonObject.getString("chapter_id");
-        }catch (Exception e){
+        } catch (Exception e) {
         }
         return paramAttr;
     }
 
-    public void deleteAdvertClickData(List<AdvertUploadBean>list) {
-        if(list==null){
+    public void deleteAdvertClickData(List<AdvertUploadBean> list) {
+        deleteEventClickData(list, "0");
+    }
+
+    public void deleteOtherClickData(List<AdvertUploadBean> list) {
+        deleteEventClickData(list, "1");
+    }
+
+    public void deleteEventClickData(List<AdvertUploadBean> list, String eventType) {
+        if (list == null) {
             return;
         }
-        SQLiteDatabase db=null;
+        SQLiteDatabase db = null;
         try {
             db = getWritableDatabase();
-            db.beginTransaction();
             for (int i = 0; i < list.size(); i++) {
                 AdvertUploadBean pageBean = list.get(i);
-                if(TJStatCore.get().isDebug()){
+                if (TJStatCore.get().isDebug()) {
                     //debug模式逻辑删除,便于测试
                     ContentValues values = new ContentValues();
-                    values.put(DBConstant.data_flag,"0");
-                    db.update(DBConstant.T_NOVEL_CLICK_ADVERT,values,DBConstant.uid+"=?",new String[]{pageBean.uid});
-                }else{
+                    values.put(DBConstant.data_flag, "0");
+                    db.update(DBConstant.T_NOVEL_CLICK_ADVERT, values, DBConstant.uid + "=? and " + DBConstant.event_type + " =? ", new String[]{pageBean.uid, eventType});
+                } else {
                     //release模式物理删除,防止数据过多
-                    db.delete(DBConstant.T_NOVEL_CLICK_ADVERT,DBConstant.uid+"=?",new String[]{pageBean.uid});
+                    db.delete(DBConstant.T_NOVEL_CLICK_ADVERT, DBConstant.uid + "=? and " + DBConstant.event_type + " =? ", new String[]{pageBean.uid, eventType});
                 }
             }
-            db.setTransactionSuccessful();
-            db.endTransaction();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

@@ -178,6 +178,8 @@ public class TJ implements Serializable {
         }
         TJStatCore.get().deleteAdvertClickData(context, list);
     }
+
+
     private static boolean isAppOnForeground(Context context) {
         Context applicationContext = context.getApplicationContext();
         ActivityManager activityManager = (ActivityManager)applicationContext.getSystemService(Context.ACTIVITY_SERVICE);

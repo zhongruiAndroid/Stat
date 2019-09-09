@@ -137,6 +137,9 @@ public class TJStatCore implements Serializable {
             //举个例子，app在后台停留的页面为A，此时回到app显示的A页面(访问一次)，自动显示启动页面(同时也是广告)，然后又回到A页面(又访问一次)
             // 这个过程记录了两次，但是需求只需要记录一次，所以只要进入了启动页，就把之前的页面清理掉，从后续进入的页面开始记录
             setFirstInto();
+
+            //此时还要删除该log_id下已经保存的数据
+            deleteIgnoreData(activity,logId);
             return;
         }
         //设置最上层页面Activity
@@ -215,6 +218,15 @@ public class TJStatCore implements Serializable {
 
         //离开时保存页面数据
         addData(activity, pageBeanBefore);
+    }
+
+    private void deleteIgnoreData(final Activity context,final String logId) {
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                SaveHelper.deleteDataForLogId(context, logId);
+            }
+        });
     }
 
     private void nowPageCopyToBefore(PageBean now, PageBean before) {
@@ -428,15 +440,15 @@ public class TJStatCore implements Serializable {
     }
 
     public void addAdvertClickData(final Context context, final ClickBean bean) {
-        if (clickCount >= clickCacheSize) {
-            clickCount = 0;
-            prepareUploadAdvertClickData(context);
-        }
         executorService.execute(new Runnable() {
             @Override
             public void run() {
                 clickCount++;
                 SaveHelper.addAdvertClickData(context, bean);
+                if (clickCount >= clickCacheSize) {
+                    clickCount = 0;
+                    prepareUploadAdvertClickData(context);
+                }
             }
         });
     }

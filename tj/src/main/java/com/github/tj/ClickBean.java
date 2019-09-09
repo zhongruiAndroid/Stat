@@ -22,6 +22,8 @@ public class ClickBean implements Serializable {
     public String page_param1;
     public String page_param2;
     public String page_param3;
+    //事件类型0：广告点击事件，1：其他事件
+    public String event_type="1";
     public int   data_flag=-1;
     public long  create_time;
 

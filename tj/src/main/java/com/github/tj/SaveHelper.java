@@ -16,6 +16,9 @@ public class SaveHelper implements Serializable {
     public static void deleteData(Context context,List<PageBean>list){
         DBManager.get(context).deleteData(list);
     }
+    public static void deleteDataForLogId(Context context,String logId){
+        DBManager.get(context).deleteDataForLogId(logId);
+    }
     public static boolean updateData(Context context,PageBean bean){
         TJStatCore.get().upAddDataCount(context);
         return DBManager.get(context).updateData(bean);
