@@ -26,10 +26,12 @@ public class SecondActivity extends AppCompatActivity {
     protected void onPause() {
         TJ.onPause(this);
         super.onPause();
+        LG.e("SecondActivity=====================onPause");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        LG.e("SecondActivity=====================onStop");
     }
 }

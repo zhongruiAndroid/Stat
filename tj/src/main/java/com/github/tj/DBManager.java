@@ -5,11 +5,14 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.provider.SyncStateContract;
 import android.support.v4.util.SparseArrayCompat;
+import android.text.TextUtils;
 
+import org.json.JSONObject;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DBManager extends SQLiteOpenHelper implements Serializable {
@@ -67,6 +70,9 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
     private void addDataTable(SQLiteDatabase db) {
         if (noExistTable(db, DBConstant.T_NOVEL_PAGE)) {
             db.execSQL(DBConstant.CT_NOVEL_PAGE_SQL);
+        }
+        if (noExistTable(db, DBConstant.T_NOVEL_CLICK_ADVERT)) {
+            db.execSQL(DBConstant.CT_NOVEL_CLICK_ADVERT_SQL);
         }
     }
 
@@ -161,12 +167,15 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
         ContentValues values = new ContentValues();
         values.put(DBConstant.uid, bean.uid);
         values.put(DBConstant.page_name, bean.page_name);
+        if(TextUtils.isEmpty(bean.page_prev)){
+            bean.page_prev=PageBean.APP_LAUNCH;
+        }
         values.put(DBConstant.page_prev, bean.page_prev);
         values.put(DBConstant.page_nick_name, bean.page_nick_name);
         values.put(DBConstant.begin_time, bean.begin_time);
         values.put(DBConstant.end_time, bean.end_time);
-        values.put(DBConstant.log_id, bean.log_id);
-        if (bean.page_type != -1) {
+        values.put(DBConstant.page_log_id, bean.page_log_id);
+        if (TextUtils.isEmpty(bean.page_type)==false) {
             values.put(DBConstant.page_type, bean.page_type);
         }
         values.put(DBConstant.page_param1, bean.page_param1);
@@ -185,12 +194,15 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
             ContentValues values = new ContentValues();
             values.put(DBConstant.uid, bean.uid);
             values.put(DBConstant.page_name, bean.page_name);
+            if(TextUtils.isEmpty(bean.page_prev)){
+                bean.page_prev=PageBean.APP_LAUNCH;
+            }
             values.put(DBConstant.page_prev, bean.page_prev);
             values.put(DBConstant.page_nick_name, bean.page_nick_name);
             values.put(DBConstant.begin_time, bean.begin_time);
             values.put(DBConstant.end_time, bean.end_time);
-            values.put(DBConstant.log_id, bean.log_id);
-            if (bean.page_type != -1) {
+            values.put(DBConstant.page_log_id, bean.page_log_id);
+            if (TextUtils.isEmpty(bean.page_type)==false) {
                 values.put(DBConstant.page_type, bean.page_type);
             }
             values.put(DBConstant.page_param1, bean.page_param1);
@@ -212,17 +224,229 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
             db.close();
         }
     }
+    private void closeCursor(Cursor cursor) {
+        if (cursor != null) {
+            cursor.close();
+        }
+    }
+
+    public List<PageBean> getData() {
+        List<PageBean>list=new ArrayList<>();
+        SQLiteDatabase db=null;
+        Cursor cursor=null;
+        try {
+            db = getReadableDatabase();
+
+            cursor = db.query(DBConstant.T_NOVEL_PAGE,
+                    new String[]{
+                            DBConstant.uid,
+                            DBConstant.page_name,
+                            DBConstant.page_prev,
+                            DBConstant.page_nick_name,
+                            DBConstant.begin_time,
+                            DBConstant.end_time,
+                            DBConstant.page_log_id,
+                            DBConstant.page_type},
+                    DBConstant.data_flag+" = ? ",new String[]{"1"},null,null,null);
+            while (cursor.moveToNext()){
+                PageBean bean=new PageBean();
+                bean.uid=cursor.getString(cursor.getColumnIndex(DBConstant.uid));
+
+                bean.page_name=cursor.getString(cursor.getColumnIndex(DBConstant.page_name));
+                bean.page_prev=cursor.getString(cursor.getColumnIndex(DBConstant.page_prev));
+                bean.page_nick_name=cursor.getString(cursor.getColumnIndex(DBConstant.page_nick_name));
+                bean.begin_time=cursor.getString(cursor.getColumnIndex(DBConstant.begin_time));
+                bean.end_time=cursor.getString(cursor.getColumnIndex(DBConstant.end_time));
+                bean.page_log_id =cursor.getString(cursor.getColumnIndex(DBConstant.page_log_id));
+                bean.page_type=cursor.getString(cursor.getColumnIndex(DBConstant.page_type));
+
+                list.add(bean);
+            }
+            return list;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            closeCursor(cursor);
+            closeDB(db);
+        }
+    }
+
+    public void deleteData(List<PageBean>list) {
+        if(list==null){
+            return;
+        }
+
+        SQLiteDatabase db=null;
+        try {
+            db = getWritableDatabase();
+            db.beginTransaction();
+            for (int i = 0; i < list.size(); i++) {
+                PageBean pageBean = list.get(i);
+                if(TJStatCore.get().isDebug()){
+                    //debug模式逻辑删除,便于测试
+                    ContentValues values = new ContentValues();
+                    values.put(DBConstant.data_flag,"0");
+                    db.update(DBConstant.T_NOVEL_PAGE,values,DBConstant.uid+"=?",new String[]{pageBean.uid});
+                }else{
+                    //release模式物理删除,防止数据过多
+                    db.delete(DBConstant.T_NOVEL_PAGE,DBConstant.uid+"=?",new String[]{pageBean.uid});
+                }
+            }
+            db.setTransactionSuccessful();
+            db.endTransaction();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeDB(db);
+        }
+    }
 
 
-    /*public long updateMemo(MemoBean bean) {
-        SQLiteDatabase db = getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(DBConstant.dataRemark,bean.getDataRemark());
-        values.put(DBConstant.dataContent,bean.getDataContent());
-        values.put(DBConstant.updateTime, DateUtils.getLocalDate());
-        long insert = db.update(T_Memo_Note, values, DBConstant._id + "=?", new String[]{bean.get_id() + ""});
-        db.close();
-        return insert;
-    }*/
+    public boolean addAdvertClickData(ClickBean bean) {
+        SQLiteDatabase db=null;
+        try {
+            db = getWritableDatabase();
+            ContentValues values = new ContentValues();
+            values.put(DBConstant.uid, bean.uid);
+            values.put(DBConstant.click_id, bean.click_id);
+            values.put(DBConstant.click_name, bean.click_name);
+            values.put(DBConstant.page_name, bean.page_name);
+            values.put(DBConstant.page_nick_name, bean.page_nick_name);
+            values.put(DBConstant.begin_time, bean.begin_time);
+            values.put(DBConstant.param_attr, bean.param_attr);
+            values.put(DBConstant.page_param1, bean.page_param1);
+            values.put(DBConstant.page_param2, bean.page_param2);
+            values.put(DBConstant.page_param3, bean.page_param3);
+            if (bean.data_flag != -1) {
+                values.put(DBConstant.data_flag, bean.data_flag);
+            }
+            values.put(DBConstant.create_time, bean.create_time);
+            db.insert(DBConstant.T_NOVEL_CLICK_ADVERT, null, values);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            closeDB(db);
+        }
+        return true;
+    }
+    public List<AdvertUploadBean> getAdvertClickData() {
+        List<AdvertUploadBean>list=new ArrayList<>();
+        SQLiteDatabase db=null;
+        Cursor cursor=null;
+        try {
+            db = getReadableDatabase();
 
+            cursor = db.query(DBConstant.T_NOVEL_CLICK_ADVERT,
+                    new String[]{
+                            DBConstant.uid,
+                            DBConstant.click_id,
+                            DBConstant.click_name,
+                            DBConstant.page_nick_name,
+                            DBConstant.begin_time,
+                            DBConstant.param_attr},
+                    DBConstant.data_flag+" = ? ",new String[]{"1"},null,null,null);
+            while (cursor.moveToNext()){
+                AdvertUploadBean bean=new AdvertUploadBean();
+                bean.uid=cursor.getString(cursor.getColumnIndex(DBConstant.uid));
+                //接口需要的advert_name对应click_id
+                //接口需要的advert_nick_name对应click_name
+                //接口需要的advert_page_name对应page_nick_name
+                bean.advert_name=cursor.getString(cursor.getColumnIndex(DBConstant.click_id));
+                bean.advert_nick_name=cursor.getString(cursor.getColumnIndex(DBConstant.click_name));
+                bean.advert_page_name=cursor.getString(cursor.getColumnIndex(DBConstant.page_nick_name));
+                bean.begin_time=cursor.getString(cursor.getColumnIndex(DBConstant.begin_time));
+                String paramJson=cursor.getString(cursor.getColumnIndex(DBConstant.param_attr));
+
+                ParamAttr paramAttr = getParamAttr(paramJson);
+                bean.book_id=paramAttr.book_id;
+                bean.chapter_id=paramAttr.chapter_id;
+
+                list.add(bean);
+            }
+            return list;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            closeCursor(cursor);
+            closeDB(db);
+        }
+    }
+
+    private ParamAttr getParamAttr(String json) {
+        ParamAttr paramAttr=new ParamAttr();
+        if(TextUtils.isEmpty(json)){
+            return paramAttr;
+        }
+        try {
+            JSONObject jsonObject=new JSONObject(json);
+            Class<?> aClass = paramAttr.getClass();
+            boolean flag=true;
+            while (flag){
+                Field[] declaredFields = aClass.getDeclaredFields();
+                if(declaredFields==null){
+                    return paramAttr;
+                }
+                int length = declaredFields.length;
+                if(length==0){
+                    return paramAttr;
+                }
+                for (int i = 0; i < length; i++) {
+                    declaredFields[i].setAccessible(true);
+                    String name = declaredFields[i].getName();
+                    try{
+                        declaredFields[i].set(paramAttr,jsonObject.getString(name)==null?"":jsonObject.getString(name));
+                    }catch (Exception e){
+                    }
+                }
+                Class<?> superclass = aClass.getSuperclass();
+                String name = superclass.getName();
+                if(name.startsWith("java.")||
+                        name.startsWith("javax.")||
+                        name.startsWith("android.")||
+                        name.startsWith("androidx.")
+                        ){
+                    flag=false;
+                }else{
+                    aClass=superclass;
+                }
+            }
+//这里用反射获取属性名字用于json解析，这样每增加或修改一个属性 都不需要增加jsonObject.getString("属性名")代码了
+//            paramAttr.book_id=jsonObject.getString("book_id");
+//            paramAttr.chapter_id=jsonObject.getString("chapter_id");
+        }catch (Exception e){
+        }
+        return paramAttr;
+    }
+
+    public void deleteAdvertClickData(List<AdvertUploadBean>list) {
+        if(list==null){
+            return;
+        }
+        SQLiteDatabase db=null;
+        try {
+            db = getWritableDatabase();
+            db.beginTransaction();
+            for (int i = 0; i < list.size(); i++) {
+                AdvertUploadBean pageBean = list.get(i);
+                if(TJStatCore.get().isDebug()){
+                    //debug模式逻辑删除,便于测试
+                    ContentValues values = new ContentValues();
+                    values.put(DBConstant.data_flag,"0");
+                    db.update(DBConstant.T_NOVEL_CLICK_ADVERT,values,DBConstant.uid+"=?",new String[]{pageBean.uid});
+                }else{
+                    //release模式物理删除,防止数据过多
+                    db.delete(DBConstant.T_NOVEL_CLICK_ADVERT,DBConstant.uid+"=?",new String[]{pageBean.uid});
+                }
+            }
+            db.setTransactionSuccessful();
+            db.endTransaction();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeDB(db);
+        }
+    }
 }
