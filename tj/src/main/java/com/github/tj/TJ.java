@@ -51,13 +51,6 @@ public class TJ implements Serializable {
         TJStatCore.get().onPause(fragment, name);
     }
 
-    public static void setLogId(String logId) {
-        TJStatCore.get().setLogId(logId);
-    }
-
-    public static void changeLogId() {
-        TJStatCore.get().changeLogId();
-    }
 
     public static void setIgnorePageName(String pageName){
         TJStatCore.get().setIgnorePageName(pageName);
@@ -136,15 +129,15 @@ public class TJ implements Serializable {
      * 页面本地缓存数量，超过数量就上报给接口
      * @param cacheSize
      */
-    public void setCacheSize(int cacheSize) {
-        TJStatCore.get().setCacheSize(cacheSize);
+    public static void setPageCacheSize(int cacheSize) {
+        TJStatCore.get().setPageCacheSize(cacheSize);
     }
 
     /**
      * 广告点击事件缓存数量，超过数量就上报给接口
      * @param clickCacheSize
      */
-    public void setClickCacheSize(int clickCacheSize) {
+    public static void setClickCacheSize(int clickCacheSize) {
         TJStatCore.get().setClickCacheSize(clickCacheSize);
     }
 
@@ -170,13 +163,31 @@ public class TJ implements Serializable {
         clickBean.page_nick_name = pageNickName;
         TJStatCore.get().addAdvertClickData(activity,clickBean);
     }
-
-
     public static void deleteAdvertClickData(Context context, List<AdvertUploadBean> list) {
         if (context == null) {
             throw new IllegalStateException("context is null");
         }
         TJStatCore.get().deleteAdvertClickData(context, list);
+    }
+
+    public static void onEvent(Activity activity, String pageNickName, String clickId, String clickName, String attrJson) {
+        if(activity==null){
+            throw new IllegalStateException("onEvent() activity not null");
+        }
+        ClickBean clickBean = new ClickBean();
+        clickBean.begin_time = String.valueOf(Calendar.getInstance().getTimeInMillis());
+        clickBean.click_id = clickId;
+        clickBean.click_name = clickName;
+        clickBean.param_attr = attrJson;
+        clickBean.page_name = activity.getClass().getSimpleName();
+        clickBean.page_nick_name = pageNickName;
+        TJStatCore.get().addOtherClickData(activity,clickBean);
+    }
+    public static void deleteOtherClickData(Context context, List<AdvertUploadBean> list) {
+        if (context == null) {
+            throw new IllegalStateException("context is null");
+        }
+        TJStatCore.get().deleteOtherClickData(context, list);
     }
 
 

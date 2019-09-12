@@ -11,4 +11,6 @@ public interface TJUpLoadDataListener extends Serializable {
     void uploadPageData(List<PageBean> list);
     //广告点击上报
     void uploadAdvertClickData(List<AdvertUploadBean> list);
+    //其他点击上报
+    void uploadOtherClickData(List<AdvertUploadBean> list);
 }

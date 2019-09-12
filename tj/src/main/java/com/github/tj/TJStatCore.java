@@ -142,16 +142,18 @@ public class TJStatCore implements Serializable {
             deleteIgnoreData(activity,logId);
             return;
         }
+
+
         //设置最上层页面Activity
         setTopAct(activity);
-        if (pageName == null) {
+        if (TextUtils.isEmpty(pageName)) {
             pageName = className;
         }
         long intoTime = Calendar.getInstance().getTimeInMillis();
         /**********第1种情况************/
         //如果没有before页面，则视为启动app进入的第一个界面
         if (pageBeanBefore == null) {
-            pageBeanAct.reset();
+            pageBeanAct=new PageBean();
             pageBeanAct.actName = className;
             setDataForPage(pageBeanAct, PageBean.PAGE_TYPE_INTO, "", className, pageName, String.valueOf(intoTime));
             return;
@@ -172,10 +174,20 @@ public class TJStatCore implements Serializable {
         /**********第4种情况************/
         //进入app之后的页面跳转
         //需要重置属性，保存新页面数据
-        pageBeanAct.reset();
+        pageBeanAct=new PageBean();
         pageBeanAct.actName = className;
         //pageBeanBefore.page_name获取上一个页面name
-        setDataForPage(pageBeanAct, PageBean.PAGE_TYPE_OTHER, pageBeanBefore.page_name, className, pageName, String.valueOf(intoTime));
+
+        String prevPageNickName=pageBeanBefore.page_nick_name;
+        if(pageBeanFrag!=null&&pageBeanBefore.actName.equals(pageBeanFrag.actName)){
+            //如果上个activity里面有fragment，那么上个页面备注就以fragment为统计维度
+            //此时pageBeanFrag还没重新赋值，所以从pageBeanFrag这里拿上个fragment的页面信息是没问题的
+            //不拿pageBeanFragBefore是因为离开activity就将它置空了
+            prevPageNickName=pageBeanFrag.page_nick_name;
+        }
+        setDataForPage(pageBeanAct, PageBean.PAGE_TYPE_OTHER,prevPageNickName, className, pageName, String.valueOf(intoTime));
+
+
     }
 
     public void onPause(Activity activity, String pageName) {
@@ -186,6 +198,9 @@ public class TJStatCore implements Serializable {
         if (activity == null) {
             throw new IllegalStateException("onPause() activity不能为空");
         }
+        if(pageBeanAct==null){
+            return;
+        }
         String className = activity.getClass().getSimpleName();
         if (ignorePageName.equals(className)) {
             //此处代码仅仅是为了满足业务需求，因为如果不排除所忽略页面的之前页面，那么访问次数每次会多增加一次
@@ -194,6 +209,13 @@ public class TJStatCore implements Serializable {
             setFirstInto();
             return;
         }
+
+        //一旦涉及到activity页面离开，如果该页面没有fragment，就将上一个fragment页面信息置空，方便某些特殊情况的数据标记
+        //比如：A-B-A(回到A后，在当前A页面切换fragA1和fragA2)   A里面有fragA1和fragA2， 如果上一个fragA1和当前fragA2在同一个activity,
+        // 针对当前页面(fragA1),那么上个页面的备注以上一个A页面为主，
+        // 针对当前页面(fragA2),那么上个页面的备注以上一个fragA1为主
+        pageBeanBeforeFrag=null;
+
         isFirstIntoApp = false;
        /* String className = activity.getClass().getSimpleName();
         if(pageName==null){
@@ -281,6 +303,7 @@ public class TJStatCore implements Serializable {
         if (fragment == null) {
             throw new IllegalStateException("onResume() fragment不能为空");
         }
+
         if (isChangePage) {
             isChangePage = !isChangePage;
         } else {
@@ -293,22 +316,25 @@ public class TJStatCore implements Serializable {
         if (activity != null) {
             activityName = activity.getClass().getSimpleName();
         }
-        if (pageName == null) {
+        if (TextUtils.isEmpty(pageName)) {
             pageName = className;
         }
         long intoTime = Calendar.getInstance().getTimeInMillis();
         /**********第1种情况************/
         //如果没有before页面,且属于当前activity，则为启动app进入的第一个界面
 //        同act
-        if (pageBeanBeforeFrag == null) {
-            pageBeanFrag.reset();
+        if (isFirstIntoApp) {
+            pageBeanFrag=new PageBean();
             pageBeanFrag.actName = activityName;
 
-            String pageType = PageBean.PAGE_TYPE_OTHER;
-            if (isFirstIntoApp) {
-                pageType = PageBean.PAGE_TYPE_INTO;
+            String pageType = PageBean.PAGE_TYPE_INTO;
+
+            String prevPageNickName="";
+            if(pageBeanBefore!=null){
+                //如果上一个页面activity不为空，那么上个页面的备注以上一个activity为主
+                prevPageNickName=pageBeanBefore.page_nick_name;
             }
-            setDataForPage(pageBeanFrag, pageType, "", className, pageName, String.valueOf(intoTime));
+            setDataForPage(pageBeanFrag, pageType, prevPageNickName, className, pageName, String.valueOf(intoTime));
             return;
         }
         /* *//**********第3种情况************//*
@@ -320,10 +346,28 @@ public class TJStatCore implements Serializable {
         /**********第4种情况************/
         //进入app之后的页面跳转
         //需要重置属性，保存新页面数据
-        pageBeanFrag.reset();
+        pageBeanFrag=new PageBean();
         pageBeanFrag.actName = activityName;
         //pageBeanBefore.page_name获取上一个页面name
-        setDataForPage(pageBeanFrag, PageBean.PAGE_TYPE_OTHER, pageBeanBeforeFrag.page_name, className, pageName, String.valueOf(intoTime));
+
+        //上一个activity页面备注
+        String prevPageNickName="";
+        //比如：A-B-A(回到A后，在当前A页面从fragA1切换到fragA2)   A里面有fragA1和fragA2， 如果上一个fragA1和当前fragA2在同一个activity,
+        // 情况1：B回到A，针对当前页面(fragA1),那么上个页面的备注以上一个A页面为主，
+        // 情况2：fragA1切换到fragA2，针对当前页面(fragA2),那么上个页面的备注以上一个fragA1为主
+        if(pageBeanBeforeFrag==null){
+            if(pageBeanBefore!=null){
+                //情况1：
+                prevPageNickName=pageBeanBefore.page_nick_name;
+            }
+        }else{
+            //情况2：
+            prevPageNickName=pageBeanBeforeFrag.page_nick_name;
+        }
+
+        setDataForPage(pageBeanFrag, PageBean.PAGE_TYPE_OTHER, prevPageNickName, className, pageName, String.valueOf(intoTime));
+
+
     }
 
     public void onPause(Fragment fragment, String pageName) {
@@ -333,6 +377,13 @@ public class TJStatCore implements Serializable {
         }
         if (fragment == null) {
             throw new IllegalStateException("onPause() fragment不能为空");
+        }
+        if(pageBeanFrag==null){
+            return;
+        }
+        //防止相同的activity下面的fragment标记为第一次启动
+        if(isFirstIntoApp){
+            isFirstIntoApp=false;
         }
         isChangePage = true;
         long outTime = Calendar.getInstance().getTimeInMillis();
@@ -360,7 +411,10 @@ public class TJStatCore implements Serializable {
         updateData(context, pageBeanAct);
 
         //如果当前activity有fragment页面信息，也保存
-        if (pageBeanFrag != null && TextUtils.isEmpty(pageBeanFrag.page_name) == false && pageBeanFrag.actName.equals(pageBeanAct.actName)) {
+        if (pageBeanFrag != null
+                && TextUtils.isEmpty(pageBeanFrag.page_name) == false
+                && pageBeanFrag.actName.equals(pageBeanAct.actName)
+                ) {
             //fragment页面的type跟随当前activity
             if (pageBeanFrag.page_type == PageBean.PAGE_TYPE_INTO) {
                 pageBeanFrag.page_type = PageBean.PAGE_TYPE_INTO_OUT;
@@ -479,6 +533,46 @@ public class TJStatCore implements Serializable {
             }
         });
     }
+    public void addOtherClickData(final Context context, final ClickBean bean) {
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                clickCount++;
+                SaveHelper.addOtherClickData(context, bean);
+                if (clickCount >= clickCacheSize) {
+                    clickCount = 0;
+                    prepareUploadOtherClickData(context);
+                }
+            }
+        });
+    }
+
+    private void prepareUploadOtherClickData(final Context context) {
+        final List<AdvertUploadBean> advertClickData = SaveHelper.getOtherClickData(context);
+        if (advertClickData == null || advertClickData.size() == 0) {
+            return;
+        }
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (tjUpLoadDataListener != null) {
+                    tjUpLoadDataListener.uploadOtherClickData(advertClickData);
+                }
+            }
+        });
+    }
+
+    public void deleteOtherClickData(final Context context, final List<AdvertUploadBean> data) {
+        if (data == null || data.size() == 0) {
+            return;
+        }
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                SaveHelper.deleteOtherClickData(context, data);
+            }
+        });
+    }
 
     public void setDeBug(boolean debug) {
         this.isDebug = debug;
@@ -496,7 +590,7 @@ public class TJStatCore implements Serializable {
         isInit = init;
     }
 
-    public void setCacheSize(int cacheSize) {
+    public void setPageCacheSize(int cacheSize) {
         if (cacheSize <= 0) {
             cacheSize = 2;
         }

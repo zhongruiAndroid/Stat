@@ -60,13 +60,6 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
     public void onCreate(SQLiteDatabase db) {
         addDataTable(db);
     }
-
-    private void addDataTable(SQLiteDatabase db, String table) {
-        if (noExistTable(db, table)) {
-            db.execSQL(table);
-        }
-    }
-
     private void addDataTable(SQLiteDatabase db) {
         if (noExistTable(db, DBConstant.T_NOVEL_PAGE)) {
             db.execSQL(DBConstant.CT_NOVEL_PAGE_SQL);
@@ -78,7 +71,11 @@ public class DBManager extends SQLiteOpenHelper implements Serializable {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+        if(oldVersion<newVersion){
+            dropTable(db,DBConstant.T_NOVEL_PAGE);
+            dropTable(db,DBConstant.T_NOVEL_CLICK_ADVERT);
+            addDataTable(db);
+        }
     }
 
     private boolean dropTable(SQLiteDatabase db, String table) {

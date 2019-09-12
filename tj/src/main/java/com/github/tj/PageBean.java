@@ -9,7 +9,7 @@ import java.util.UUID;
  */
 public class PageBean implements Serializable {
     //用来判断退出app时，最后一个fragment是否在最后一个activity里面
-    public String actName;
+    public String actName="";
     //第一次启动时
     public static final String PAGE_TYPE_INTO="1";
     //最后退出时
@@ -25,7 +25,7 @@ public class PageBean implements Serializable {
     public String uid;
     public String page_name;
     public String page_prev;
-    public String page_nick_name;
+    public String page_nick_name="";
     //后台接口需要string类型
     public String  begin_time;
     public String  end_time;
@@ -39,11 +39,6 @@ public class PageBean implements Serializable {
     public long  create_time;
 
     public PageBean() {
-        uid=UUID.randomUUID().toString();
-        create_time=Calendar.getInstance().getTimeInMillis();
-    }
-
-    public void reset(){
         uid=UUID.randomUUID().toString();
         create_time=Calendar.getInstance().getTimeInMillis();
 
@@ -60,4 +55,6 @@ public class PageBean implements Serializable {
         page_param3="";
         data_flag=-1;
     }
+
+
 }

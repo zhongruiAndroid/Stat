@@ -24,6 +24,16 @@ public class SplashActivity extends AppCompatActivity {
                 startActivity(new Intent(SplashActivity.this,MainActivity.class));
             }
         });
+
+
+        App.get(this);
+        App.getNavigationBarHeight(this);
+    }
+
+    @Override
+    public void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        App.get(this);
     }
 
     @Override
